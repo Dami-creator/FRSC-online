@@ -1,19 +1,8 @@
-<?php
-include 'config.php';
-session_start();
-$ref = $_GET['reference'];
-$ch = curl_init("https://api.paystack.co/transaction/verify/$ref");
-curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . PAYSTACK_SECRET]);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-$result = curl_exec($ch);
-curl_close($ch);
-$data = json_decode($result);
-
-if ($data->data->status == 'success') {
-  // Save to database or CSV
+$paid_amount = $data->data->amount; // in kobo from Paystack
+if ($data->data->status == 'success' && $paid_amount == AMOUNT) {
+  // Save data – only if amount matches exactly
   file_put_contents('applications.csv', implode(',', $_SESSION['form_data']) . ",$ref," . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
-  echo "<h2>Payment Successful! Reference: $ref</h2><p>Your application is submitted.</p>";
+  echo "<h2>Payment Successful! You paid exactly ₦5,000. Reference: $ref</h2>";
 } else {
-  echo "Payment failed.";
+  echo "Payment failed – incorrect amount. You paid " . ($paid_amount/100) . " NGN instead of ₦5,000. Contact support.";
 }
-?>
